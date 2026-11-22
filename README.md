@@ -1,8 +1,8 @@
 # marqius-wkhtmltopdf: the maintained wkhtmltopdf replacement
 
-**Turn HTML into PDF with the command your app already uses.** marqius-wkhtmltopdf is a drop-in replacement for wkhtmltopdf: the same command, the same options, the same HTML templates. Your code does not change.
+**Turn HTML into PDF with the command your app already uses.** marqius-wkhtmltopdf is a drop-in replacement for wkhtmltopdf: the same command, the same options, the same HTML templates. Your code does not change. It prints Arabic, Hebrew, Hindi, Thai, Chinese, Japanese and Korean as well as English.
 
-[Install](#install-in-one-minute) · [Your first PDF](#make-your-first-pdf) · [Your library](#switch-your-library-in-one-step) · [The proof](#dont-take-our-word-for-it) · [Price](#price) · [Questions](#questions-developers-ask)
+[Install](#install-in-one-minute) · [Your first PDF](#make-your-first-pdf) · [Languages](#print-arabic-chinese-hindi-and-more) · [Your library](#switch-your-library-in-one-step) · [The proof](#dont-take-our-word-for-it) · [Price](#price) · [Questions](#questions-developers-ask)
 
 ## Why this matters
 
@@ -21,6 +21,7 @@ So the day your servers move to a new system, your PDFs stop. marqius-wkhtmltopd
 | What you install | The program, Qt and its libraries | One program file |
 | Needs an X server or Xvfb | Sometimes | Never |
 | Your commands and options | | The same |
+| Arabic, Hebrew, Chinese, Hindi and Thai text you can search and copy | Often broken | Yes |
 | Time for the 86 public test documents | 19.8 seconds | 0.51 seconds¹ |
 
 ¹ The documents of the public [parity suite](https://github.com/marqiushq/wkhtmltopdf-parity), converted one after another: 39 times faster. With wkhtmltopdf's 200 ms script wait turned off, 5 times faster.
@@ -78,6 +79,45 @@ marqius-wkhtmltopdf --page-size A4 invoice.html invoice.pdf
 ```
 
 Open `invoice.pdf`. The options you used with wkhtmltopdf work as they did, for example `--margin-top 20mm`, `--header-html header.html` or `--footer-center "Page [page] of [topage]"`.
+
+## Print Arabic, Chinese, Hindi and more
+
+marqius-wkhtmltopdf prints all of these, even on one page. Each one is tested on real invoices, letters and receipts, and the PDF keeps the words as text, so you can search and copy them.
+
+| Language | On a Linux server | On a Mac or Windows |
+|---|---|---|
+| English, French, German, Spanish and other languages in Latin letters; Greek; Russian | Works with the fonts most servers have | Works |
+| Arabic and Hebrew, from right to left | Works: the fonts are built in | Works |
+| Hindi and Thai | Install `fonts-noto-core` | Works |
+| Chinese, Japanese and Korean | Install `fonts-noto-cjk` | Works |
+
+On Debian or Ubuntu, this one line installs the fonts for every language above:
+
+```bash
+sudo apt-get update && sudo apt-get install -y fonts-noto-core fonts-noto-cjk
+```
+
+In a Dockerfile, put the same line after `RUN`, without `sudo`. With the `marqius/wkhtmltopdf` image, [its page](https://hub.docker.com/r/marqius/wkhtmltopdf) shows how to add these fonts. On Alpine, Fedora, Red Hat or Arch, the program prints the line for your system when a font is missing.
+
+Then try an invoice in eight languages:
+
+```bash
+cat > invoice.html <<'HTML'
+<!doctype html>
+<meta charset="utf-8">
+<h1>Invoice 42</h1>
+<p lang="ar" dir="rtl">فاتورة 42</p>
+<p lang="he" dir="rtl">חשבונית 42</p>
+<p lang="hi">चालान 42</p>
+<p lang="th">ใบแจ้งหนี้ 42</p>
+<p lang="zh">发票 42</p>
+<p lang="ja">請求書 42</p>
+<p lang="ko">청구서 42</p>
+HTML
+marqius-wkhtmltopdf invoice.html invoice.pdf
+```
+
+For a page all in Arabic or Hebrew, put `dir="rtl"` on its `<html>` tag. The page then reads from the right, and its tables and lists turn to match.
 
 ## Switch your library in one step
 
@@ -166,6 +206,12 @@ No. Keep your library, your templates and your calls. Point the library at marqi
 
 **Will my PDFs look exactly the same?**
 Very close, and you can see for yourself before you switch: run the [parity suite](https://github.com/marqiushq/wkhtmltopdf-parity#check-your-own-templates) on your own templates, or add the [parity check](https://github.com/marqiushq/wkhtmltopdf-parity-check) to your CI.
+
+**Why can't I search or copy Arabic, Chinese or Hindi text in my wkhtmltopdf PDF?**
+wkhtmltopdf often stores these scripts as shapes, not words: from its Arabic invoice in the [parity suite](https://github.com/marqiushq/wkhtmltopdf-parity), 2 of 56 words read back as written, against 48 from marqius-wkhtmltopdf. Its Chinese text has look-alike signs in place of some characters, so a search for the company's name finds nothing. The pages look the same; the text inside them does not.
+
+**Why do letters show as boxes in my PDF?**
+The computer that makes the PDF has no font for them. Convert the page with marqius-wkhtmltopdf and it names the missing letters, then prints the one line that installs fonts for them on your system.
 
 **Does it work in Docker and on ARM64 servers?**
 Yes. The [marqius/wkhtmltopdf](https://hub.docker.com/r/marqius/wkhtmltopdf) images run on amd64 and arm64, from a 10 MB download.
