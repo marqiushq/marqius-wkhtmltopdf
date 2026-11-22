@@ -17,7 +17,7 @@ So the day your servers move to a new system, your PDFs stop. marqius-wkhtmltopd
 | | wkhtmltopdf 0.12.6 | marqius-wkhtmltopdf |
 |---|---|---|
 | Maintained | No, archived in 2023 | Yes, with regular releases |
-| Installs on Debian 13 and Ubuntu 26.04 | No | Yes: apt, dnf, apk, Homebrew, Docker |
+| Installs on Debian 13 and Ubuntu 26.04 | No | Yes: apt, dnf, apk, Homebrew, Docker, RubyGems |
 | What you install | The program, Qt and its libraries | One program file |
 | Needs an X server or Xvfb | Sometimes | Never |
 | Your commands and options | | The same |
@@ -61,6 +61,14 @@ docker run --rm -v "$PWD:/data" marqius/wkhtmltopdf invoice.html invoice.pdf
 ```yaml
 - uses: marqiushq/setup-marqius-wkhtmltopdf@v1
 ```
+
+**Ruby on Rails, with wicked_pdf or PDFKit:** in your Gemfile, replace `gem "wkhtmltopdf-binary"` with this line, then run `bundle install`:
+
+```ruby
+gem "marqius-wkhtmltopdf"
+```
+
+Do you work on a Mac and deploy to Linux? Add Linux to your `Gemfile.lock` once with `bundle lock --add-platform x86_64-linux aarch64-linux`. If your code names the program, point it at `MarqiusWkhtmltopdf.executable_path`, as the [gem's README](https://github.com/marqiushq/marqius-wkhtmltopdf-ruby#readme) shows.
 
 ## Make your first PDF
 
