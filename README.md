@@ -183,9 +183,11 @@ Everything below runs in public, on GitHub's machines, and anyone can run it aga
 
 ## Price
 
-Free for 30 days, with no card. After that, **Starter is $290 USD a year** for organisations of up to 10 people, and **Business $990 USD a year**, plus applicable taxes. Monthly and perpetual options, and Enterprise, Partner and OEM licences, are on the [plans page](https://marqius.com/wkhtmltopdf-buy/); the [licence](https://marqius.com/wkhtmltopdf/licence-agreement/) has the terms. Personal, teaching and open-source use is free with a [Community licence](https://marqius.com/wkhtmltopdf-buy/#community).
+Free for 30 days, with no card. Personal, teaching and open-source use is free with a [Community licence](https://marqius.com/wkhtmltopdf-buy/#community).
 
-Your PDFs never stop. Without a licence after the trial, each page carries one line, “Prepared by Marqius, Purchase Licence”, and `marqius-wkhtmltopdf licence` shows the days left.
+Anything done by or for a business, including internal tools and client work, needs a paid plan once the trial ends. [See the plans and prices](https://marqius.com/licence/marqius-wkhtmltopdf).
+
+Your PDFs never stop. Without a licence after the trial, each page carries one line, “Prepared by Marqius, Purchase Licence”, and `marqius-wkhtmltopdf licence` shows the days left. [Licence terms](https://marqius.com/wkhtmltopdf/licence-agreement/)
 
 ## Questions developers ask
 
