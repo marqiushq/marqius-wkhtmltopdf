@@ -1,5 +1,16 @@
 # marqius-wkhtmltopdf: the maintained wkhtmltopdf replacement
 
+**Rebuilt from scratch.**
+
+The command line is wkhtmltopdf's, refined over twelve years and relied on by a great many apps: the same command, the same options, the same HTML templates. Everything behind it is new: one file, no X server, no Qt, no libraries to install, built the modern way:
+
+- released in public, every build with its checksum beside it ([latest release](https://github.com/marqiushq/marqius-wkhtmltopdf/releases/latest))
+- every build attestable in one command:
+  `gh attestation verify marqius-wkhtmltopdf-linux-x86_64 -R marqiushq/marqius-wkhtmltopdf`
+- every release tested in public, on real documents, misses included
+
+The command line proved itself for a decade. The rebuild keeps it running on today's systems (Ubuntu 26.04, Debian 13, Alpine, Heroku-24) and tomorrow's.
+
 **Turn HTML into PDF with the command your app already uses.** marqius-wkhtmltopdf is a drop-in replacement for wkhtmltopdf: the same command, the same options, the same HTML templates. Your code does not change. It prints Arabic, Hebrew, Hindi, Thai, Chinese, Japanese and Korean as well as English.
 
 [Install](#install-in-one-minute) · [Your first PDF](#make-your-first-pdf) · [Languages](#print-arabic-chinese-hindi-and-more) · [Your library](#switch-your-library-in-one-step) · [The proof](#dont-take-our-word-for-it) · [Price](#price) · [Questions](#questions-developers-ask)
