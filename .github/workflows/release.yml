@@ -126,6 +126,52 @@ jobs:
             echo "the tag is $GITHUB_REF_NAME but the engine is $v"; exit 1
           fi
 
+      # The 445 libraries marqius uses are compiled once and kept between runs in GitHub's cache, so a
+      # build compiles marqius itself and little else. What is kept depends only on the Rust image and
+      # on the libraries Cargo.lock names, not on marqius's own version line, which moves every release.
+      - name: A builder, and the libraries it keeps between runs
+        if: matrix.kind == 'docker'
+        id: keep
+        working-directory: engine
+        env:
+          NAME: ${{ matrix.name }}
+        run: |
+          docker buildx create --name rel --driver docker-container --use --bootstrap > /dev/null 2>&1
+          rust=$(docker buildx imagetools inspect rust:1-alpine | awk '/^Digest:/ {print $2; exit}' | cut -d: -f2 | cut -c1-12)
+          libs=$(sed '/^name = "marqius"$/{N;d;}' Cargo.lock | sha256sum | cut -c1-16)
+          case "$NAME" in
+            macos-*) id=marqius-wkhtmltopdf-target-macos ;;
+            windows-*) id=marqius-wkhtmltopdf-target-windows ;;
+            *) id=marqius-wkhtmltopdf-target ;;
+          esac
+          {
+            echo "prefix=rel-$NAME-$rust-"
+            echo "key=rel-$NAME-$rust-$libs"
+            echo "map={\"keep/registry\":{\"target\":\"/usr/local/cargo/registry\",\"id\":\"/usr/local/cargo/registry\"},\"keep/target\":{\"target\":\"/src/target\",\"id\":\"$id\"}}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Rust image $rust, libraries $libs"
+
+      - name: The compiled libraries, from earlier runs
+        if: matrix.kind == 'docker'
+        id: kept
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: keep
+          key: ${{ steps.keep.outputs.key }}
+          restore-keys: ${{ steps.keep.outputs.prefix }}
+
+      - name: The compiled libraries, put in the builder (and kept again after a change)
+        if: matrix.kind == 'docker'
+        uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
+        with:
+          builder: rel
+          cache-map: ${{ steps.keep.outputs.map }}
+          skip-extraction: ${{ steps.kept.outputs.cache-hit }}
+
+      - name: GitHub's cache, for the builder's own steps
+        if: matrix.kind == 'docker'
+        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
+
       - name: Build with Docker, as the images are built
         if: matrix.kind == 'docker'
         working-directory: engine
@@ -133,15 +179,21 @@ jobs:
           V: ${{ steps.version.outputs.version }}
           PLATFORM: ${{ matrix.platform }}
           TARGET: ${{ matrix.target }}
+          NAME: ${{ matrix.name }}
         run: |
-          docker buildx create --name rel --driver docker-container --use --bootstrap > /dev/null 2>&1
           if ! docker buildx build -f "${{ matrix.dockerfile }}" --build-arg MARQIUS_VERSION="$V" \
                --platform "$PLATFORM" ${TARGET:+--target "$TARGET"} -o "type=local,dest=$RUNNER_TEMP/out" \
+               --cache-from "type=gha,scope=rel-$NAME" --cache-to "type=gha,mode=max,scope=rel-$NAME,ignore-error=true" \
                --progress plain . > "$RUNNER_TEMP/build.log" 2>&1; then
             echo "The build failed. Its log stays on the machine; where it stopped:"
             grep -E '^ERROR|^#[0-9]+ ERROR' "$RUNNER_TEMP/build.log" | cut -c1-160 | tail -3
             exit 1
           fi
+          # where the time went, by Dockerfile step (no build output: it stays on the machine)
+          awk 'match($0, /^#[0-9]+ \[[a-z-]+ [0-9]+\/[0-9]+\]/) { id = $1; lab = substr($0, RSTART + length(id) + 1, RLENGTH - length(id) - 1); name[id] = lab; next }
+               /^#[0-9]+ DONE [0-9.]+s$/ { id = $1; t = $3; sub(/s$/, "", t); if ((id in name) && t + 0 >= 3) printf "  %-14s %7.1f s\n", name[id], t }
+               /^#[0-9]+ CACHED$/ { if ($1 in name) printf "  %-14s    kept\n", name[$1] }' "$RUNNER_TEMP/build.log"
+          echo "  crates compiled in this run: $(grep -c ' Compiling ' "$RUNNER_TEMP/build.log")"
           mkdir -p ../dist && cp "$RUNNER_TEMP/out/${{ matrix.file }}" "../dist/marqius-wkhtmltopdf-${{ matrix.name }}"
 
       - name: It runs and says its version
