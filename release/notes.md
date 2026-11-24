@@ -1,11 +1,8 @@
-**Missing fonts, a check of the computer, and updates: one command each.**
+**Hidden parts of a page, and pages printed with `--no-images`, now come out as they do with wkhtmltopdf.**
 
-- When a page has letters no installed font has, such as Japanese, Hindi or emoji, the message names the free fonts that have them and gives one command that downloads them to where conversions look: `marqius-wkhtmltopdf fonts get "Noto Sans JP"`. In our Docker images it gives the `docker run` line that keeps them in a volume.
-- `marqius-wkhtmltopdf --diagnose` checks this computer: it converts test pages, then looks at the fonts, the licence, the PATH and the internet (and, in a container, Docker), and gives the command to run next for anything to fix. Add `--json` for scripts.
-- `marqius-wkhtmltopdf update` brings the newest version the way it was installed. A download is checked against the release's checksums and its GitHub build record before it replaces the program, and the version before is kept. `update --check` only says whether a newer one is out. Coming from 0.12.13 or earlier, which have no `update`, install 0.12.14 once with the install line you used.
-- On Windows, stylesheets and pictures linked by a relative path, by a `file:///` address or over HTTP now load. As with wkhtmltopdf 0.12.6, files on disk need `--enable-local-file-access`.
-- A website with an address that does not answer no longer holds up a conversion: its other addresses are tried at once.
-- The Saudi riyal sign (U+20C1) prints.
+- An element set to `visibility: hidden` prints nothing at all: no picture, background, border, underline, form field or list marker. Before, only its text was hidden. It still takes its room, so nothing moves, and anything inside it set to `visibility: visible` still prints.
+- `--no-images` fetches no picture and prints none, in PDFs and in pictures: `<img>`, picture buttons, `<object>` and `<embed>`, `data:` pictures, background pictures and the pictures a drawing names. Before, any picture that could load was downloaded and printed. Each picture keeps the room its width and height give it, with its own border and background around it. Header and footer pages, and `--checkbox-svg` pictures, keep theirs, as with wkhtmltopdf.
+- A picture button (`<input type="image">`) is as big as its width and height say.
 
 Every file below was built by this repository's release workflow on GitHub's own machines, with build provenance and a software bill of materials (SBOM). Check a file before you run it:
 
@@ -16,5 +13,5 @@ gh attestation verify marqius-wkhtmltopdf-linux-x86_64 -R marqiushq/marqius-wkht
 Check a Docker image with:
 
 ```
-gh attestation verify oci://marqius/wkhtmltopdf:0.12.14 -R marqiushq/marqius-wkhtmltopdf
+gh attestation verify oci://marqius/wkhtmltopdf:0.12.15 -R marqiushq/marqius-wkhtmltopdf
 ```
