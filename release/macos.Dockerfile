@@ -17,9 +17,12 @@ FROM base AS build
 ARG RECOMPILE
 # the libraries marqius uses stay compiled in a cache between runs (release.yml keeps it), as in the
 # engine's Dockerfile.wkhtmltopdf; only marqius itself is compiled again
+# (marqius's own files and the vendored crates are touched first: COPY can give changed files older
+# times than the kept build, and cargo would then keep the old program)
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,id=marqius-wkhtmltopdf-target-macos,target=/src/target \
-    { du -sh /src/target /usr/local/cargo/registry; ls /src/target; ls /src/target/aarch64-apple-darwin/release/.fingerprint | wc -l; } 2>&1 | sed 's/^/KEPT /'; \
+    { du -sh /src/target /usr/local/cargo/registry; ls /src/target/aarch64-apple-darwin/release/.fingerprint | wc -l; } 2>&1 | sed 's/^/KEPT /'; \
+    find src vendor -type f -exec touch {} + && \
     CARGO_PROFILE_RELEASE_STRIP=true CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 \
     cargo zigbuild -v --release --locked --features wkhtmltopdf-edition --target aarch64-apple-darwin \
  && install -D target/aarch64-apple-darwin/release/marqius /out/marqius-wkhtmltopdf
