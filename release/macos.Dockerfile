@@ -13,6 +13,8 @@ RUN mkdir src && echo 'fn main() {}' > src/main.rs && cargo fetch --locked && rm
 COPY src ./src
 
 FROM base AS build
+# set only by a run that times a code change (release.yml's recompile): it makes the compile run again
+ARG RECOMPILE
 # the libraries marqius uses stay compiled in a cache between runs (release.yml keeps it), as in the
 # engine's Dockerfile.wkhtmltopdf; only marqius itself is compiled again
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \

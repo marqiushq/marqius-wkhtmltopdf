@@ -184,13 +184,14 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           TARGET: ${{ matrix.target }}
           NAME: ${{ matrix.name }}
-          # a run by hand with recompile: the compiling stage runs again (the libraries stay in their kept folders)
-          AGAIN: ${{ inputs.recompile && (matrix.target == 'windows' && 'build-windows' || 'build') || '' }}
+          # a run by hand with recompile: the compiling step runs again, through the ARG RECOMPILE its stage
+          # declares (--no-cache-filter would hand that stage empty kept folders)
+          AGAIN: ${{ inputs.recompile && github.run_id || '' }}
         run: |
           if ! docker buildx build -f "${{ matrix.dockerfile }}" --build-arg MARQIUS_VERSION="$V" \
                --platform "$PLATFORM" ${TARGET:+--target "$TARGET"} -o "type=local,dest=$RUNNER_TEMP/out" \
                --cache-from "type=gha,scope=rel-$NAME" --cache-to "type=gha,mode=max,scope=rel-$NAME,ignore-error=true" \
-               ${AGAIN:+--no-cache-filter "$AGAIN"} \
+               ${AGAIN:+--build-arg "RECOMPILE=$AGAIN"} \
                --progress plain . > "$RUNNER_TEMP/build.log" 2>&1; then
             echo "The build failed. Its log stays on the machine; where it stopped:"
             grep -E '^ERROR|^#[0-9]+ ERROR' "$RUNNER_TEMP/build.log" | cut -c1-160 | tail -3
