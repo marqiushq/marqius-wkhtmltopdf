@@ -17,6 +17,7 @@ FROM base AS build
 # engine's Dockerfile.wkhtmltopdf; only marqius itself is compiled again
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,id=marqius-wkhtmltopdf-target-macos,target=/src/target \
+    { du -sh /src/target /usr/local/cargo/registry; ls /src/target; ls /src/target/aarch64-apple-darwin/release/.fingerprint | wc -l; } 2>&1 | sed 's/^/KEPT /'; \
     CARGO_PROFILE_RELEASE_STRIP=true CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 \
     cargo zigbuild -v --release --locked --features wkhtmltopdf-edition --target aarch64-apple-darwin \
  && install -D target/aarch64-apple-darwin/release/marqius /out/marqius-wkhtmltopdf

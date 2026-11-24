@@ -201,6 +201,9 @@ jobs:
                /^#[0-9]+ DONE [0-9.]+s$/ { id = $1; t = $3; sub(/s$/, "", t); if ((id in name) && t + 0 >= 3) printf "  %-14s %7.1f s\n", name[id], t }
                /^#[0-9]+ CACHED$/ { if ($1 in name) printf "  %-14s    kept\n", name[$1] }' "$RUNNER_TEMP/build.log"
           echo "  crates compiled in this run: $(grep -c ' Compiling ' "$RUNNER_TEMP/build.log")"
+          # what the kept folders held when the compile started, and one library's build identity
+          grep -E '^#[0-9]+ [0-9.]+ KEPT ' "$RUNNER_TEMP/build.log" | sed -E 's/^#[0-9]+ [0-9.]+ /  /' | head -8 || true
+          grep -E 'Running .*--crate-name libc ' "$RUNNER_TEMP/build.log" | grep -oE -- '-C (metadata|linker)=[^ ]+' | sort -u | head -4 | sed 's/^/  libc: /' || true
           # why kept crates were compiled again (cargo -v says; public crates only, never marqius's own files)
           if grep -q ' Dirty ' "$RUNNER_TEMP/build.log"; then
             echo "  why crates were compiled again (cargo's reasons, by kind):"
