@@ -19,12 +19,16 @@ ARG RECOMPILE
 # engine's Dockerfile.wkhtmltopdf; only marqius itself is compiled again
 # (marqius's own files and the vendored crates are touched first: COPY can give changed files older
 # times than the kept build, and cargo would then keep the old program)
+# Thin LTO, as the engine's Linux and Windows programs are: marqius in 16 parts, each library in one,
+# and the step's open-file limit raised to its hard limit for zig's linker (see Dockerfile.wkhtmltopdf)
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,id=marqius-wkhtmltopdf-target-macos,target=/src/target \
     { du -sh /src/target /usr/local/cargo/registry; ls /src/target/aarch64-apple-darwin/release/.fingerprint | wc -l; } 2>&1 | sed 's/^/KEPT /'; \
     find src vendor -type f -exec touch {} + && \
-    CARGO_PROFILE_RELEASE_STRIP=true CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 \
-    cargo zigbuild -v --release --locked --features wkhtmltopdf-edition --target aarch64-apple-darwin \
+    ulimit -n "$(ulimit -Hn)" && \
+    CARGO_PROFILE_RELEASE_STRIP=true CARGO_PROFILE_RELEASE_LTO=thin CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16 \
+    cargo zigbuild -v --config 'profile.release.package."*".codegen-units=1' \
+      --release --locked --features wkhtmltopdf-edition --target aarch64-apple-darwin \
  && install -D target/aarch64-apple-darwin/release/marqius /out/marqius-wkhtmltopdf
 
 FROM scratch

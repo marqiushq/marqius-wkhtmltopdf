@@ -131,29 +131,33 @@ jobs:
           fi
 
       # The 445 libraries marqius uses are compiled once and kept between runs in GitHub's cache, so a
-      # build compiles marqius itself and little else. What is kept depends only on the Rust image and
-      # on the libraries Cargo.lock names, not on marqius's own version line, which moves every release.
+      # build compiles marqius itself and little else. What is kept depends only on the Rust image, on
+      # how the recipe compiles (its cargo lines: a kept folder compiled another way is of no use, and
+      # GitHub never replaces a kept key), and on the libraries Cargo.lock names, not on marqius's own
+      # version line, which moves every release.
       - name: A builder, and the libraries it keeps between runs
         if: matrix.kind == 'docker'
         id: keep
         working-directory: engine
         env:
           NAME: ${{ matrix.name }}
+          RECIPE: ${{ matrix.dockerfile }}
         run: |
           docker buildx create --name rel --driver docker-container --use --bootstrap > /dev/null 2>&1
           rust=$(docker buildx imagetools inspect rust:1-alpine | awk '/^Digest:/ {print $2; exit}' | cut -d: -f2 | cut -c1-12)
           libs=$(sed '/^name = "marqius"$/{N;d;}' Cargo.lock | sha256sum | cut -c1-16)
+          how=$(grep -E '^[^#]*(CARGO_PROFILE|cargo zigbuild |ulimit)' "$RECIPE" | sha256sum | cut -c1-8)
           case "$NAME" in
             macos-*) id=marqius-wkhtmltopdf-target-macos ;;
             windows-*) id=marqius-wkhtmltopdf-target-windows ;;
             *) id=marqius-wkhtmltopdf-target ;;
           esac
           {
-            echo "prefix=rel-$NAME-$rust-"
-            echo "key=rel-$NAME-$rust-$libs"
+            echo "prefix=rel-$NAME-$rust-$how-"
+            echo "key=rel-$NAME-$rust-$how-$libs"
             echo "map={\"keep/registry\":{\"target\":\"/usr/local/cargo/registry\",\"id\":\"/usr/local/cargo/registry\"},\"keep/target\":{\"target\":\"/src/target\",\"id\":\"$id\"}}"
           } >> "$GITHUB_OUTPUT"
-          echo "Rust image $rust, libraries $libs"
+          echo "Rust image $rust, compiled as $how, libraries $libs"
 
       - name: The compiled libraries, from earlier runs
         if: matrix.kind == 'docker'
